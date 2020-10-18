@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>L33TCODE</title>
+    <link href="https://unpkg.com/tabulator-tables@4.8.2/dist/css/tabulator.min.css" rel="stylesheet">
+    <script type="text/javascript" src="https://unpkg.com/tabulator-tables@4.8.2/dist/js/tabulator.min.js"></script>
+</head>
+<body>
+<div id="table"></div>
+<script>
+    var table = new Tabulator("#table", {
+        layout:"fitColumns",
+        columns:[
+            {title:"Id", field:"Id", width: 50},
+            {title:"Title", field:"Title", width: 200},
+            {title:"Difficulty", field:"Difficulty", width: 100},
+            {title:"Last Attempted", field:"LastAttempted", width:200},
+            {title:"Attempts", field:"Attempts", width: 100},
+            {title:"Tags", field:"Tags", width: 150},
+            {title:"Url", field:"Url"}
+        ],
+    });
+
+    function fill() {
+        fetch("data")
+            .then(response => response.text())
+            .then(text => table.setData(text))
+    }
+
+    fill();
+    setInterval(fill, 2000);
+</script>
+</body>
+</html>
