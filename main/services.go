@@ -22,6 +22,26 @@ type Service struct {
 	client 	 *mongo.Client
 	db       *mongo.Database
 	problems *mongo.Collection
+
+	sse	map[*SSEClient]bool
+	register chan *SSEClient
+	unregister chan *SSEClient
+}
+
+type SSEClient struct {
+	problemChan chan *Problem
+	service *Service
+}
+
+func NewSSEClient(s *Service) (c *SSEClient) {
+	c = &SSEClient{
+		problemChan: make(chan *Problem, 150),
+		service:      s,
+	}
+
+	c.service.register <- c
+
+	return
 }
 
 func NewService() (s *Service, err error) {
@@ -41,6 +61,12 @@ func NewService() (s *Service, err error) {
 		context.TODO(),
 		mod,
 	)
+
+	s.sse = make(map[*SSEClient]bool)
+	s.register = make(chan *SSEClient)
+	s.unregister = make(chan *SSEClient)
+
+	go s.runSSE()
 	return
 }
 
@@ -78,7 +104,7 @@ func (s *Service) GetData() (problems []Problem, err error) {
 	var cursor *mongo.Cursor
 
 	options := options.Find()
-	options.SetSort(bson.D{{ "lastattempted", -1 }})
+	options.SetSort(bson.D{{ "lastattempted", 1 }})
 
 	cursor, err = s.problems.Find(context.TODO(), bson.D{{}}, options)
 	if err != nil {
@@ -138,5 +164,37 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 			return
 		}
 	}
+
+	var data Problem
+	s.problems.FindOne(
+		context.TODO(),
+		bson.M{"id": p.Id},
+	).Decode(&data)
+
+	s.Broadcast(&data)
+
 	return
+}
+
+func (s *Service) Broadcast(p *Problem) {
+	for c := range s.sse {
+		select {
+		case c.problemChan <- p:
+		default:
+			close(c.problemChan)
+			delete(s.sse, c)
+		}
+	}
+}
+
+func (s *Service) runSSE() {
+	for {
+		select {
+		case c := <-s.register:
+			s.sse[c] = true
+		case c := <-s.unregister:
+			close(c.problemChan)
+			delete(s.sse, c)
+		}
+	}
 }

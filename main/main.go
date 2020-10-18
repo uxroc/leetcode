@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/gin-gonic/gin"
+	"io"
 	"net/http"
 )
 
@@ -13,6 +14,7 @@ func main() {
 	}
 	defer s.Close()
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 	r.LoadHTMLFiles("home.html")
 
@@ -23,6 +25,17 @@ func main() {
 		} else {
 			c.JSON(http.StatusOK, gin.H{})
 		}
+	})
+
+	r.GET("/events", func(c *gin.Context) {
+		sse := NewSSEClient(s)
+		c.Stream(func(w io.Writer) bool {
+			select {
+			case p := <-sse.problemChan:
+				c.SSEvent("message", *p)
+			}
+			return true
+		})
 	})
 
 	r.GET("/data", func(c *gin.Context) {

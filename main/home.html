@@ -11,6 +11,9 @@
 <script>
     var table = new Tabulator("#table", {
         layout:"fitColumns",
+        initialSort:[
+            {column:"Last Attempted", dir:"asc"}, //sort by this first
+        ],
         columns:[
             {title:"Id", field:"Id", width: 50},
             {title:"Title", field:"Title", width: 200},
@@ -22,14 +25,24 @@
         ],
     });
 
-    function fill() {
-        fetch("data")
-            .then(response => response.text())
-            .then(text => table.setData(text))
+    function init(arr) {
+        var map = new Map();
+        arr.forEach(row => map.set(row.Id, row));
+        return map;
     }
 
-    fill();
-    setInterval(fill, 2000);
+    fetch("data")
+        .then(response => response.text())
+        .then(function(text){
+            var dataMap = init(JSON.parse(text));
+            table.setData(text);
+            var source = new EventSource("events");
+            source.onmessage = function(e) {
+                var row = JSON.parse(e.data);
+                dataMap.set(row.Id, row);
+                table.setData(JSON.stringify(Array.from(dataMap.values())));
+            }
+        })
 </script>
 </body>
 </html>
