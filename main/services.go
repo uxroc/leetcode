@@ -26,6 +26,7 @@ type Service struct {
 	sse	map[*SSEClient]bool
 	register chan *SSEClient
 	unregister chan *SSEClient
+	broadcast chan *Problem
 }
 
 type SSEClient struct {
@@ -65,6 +66,7 @@ func NewService() (s *Service, err error) {
 	s.sse = make(map[*SSEClient]bool)
 	s.register = make(chan *SSEClient)
 	s.unregister = make(chan *SSEClient)
+	s.broadcast = make(chan *Problem)
 
 	go s.runSSE()
 	return
@@ -172,7 +174,7 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 	).Decode(&data)
 
 	data.LastAttempted = data.LastAttempted.Local()
-	s.Broadcast(&data)
+	s.broadcast <- &data
 
 	return
 }
@@ -196,6 +198,8 @@ func (s *Service) runSSE() {
 		case c := <-s.unregister:
 			close(c.problemChan)
 			delete(s.sse, c)
+		case p := <-s.broadcast:
+			s.Broadcast(p)
 		}
 	}
 }
