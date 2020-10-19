@@ -117,7 +117,7 @@ func (s *Service) GetData() (problems []Problem, err error) {
 		if err = cursor.Decode(&p); err != nil {
 			return
 		}
-
+		p.LastAttempted = p.LastAttempted.Local()
 		problems = append(problems, p)
 	}
 
@@ -171,6 +171,7 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 		bson.M{"id": p.Id},
 	).Decode(&data)
 
+	data.LastAttempted = data.LastAttempted.Local()
 	s.Broadcast(&data)
 
 	return
