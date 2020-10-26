@@ -12,3 +12,12 @@ chrome-extension添加chrome插件, 安装方法看这里 -> https://developer.c
 
 P.S.
 发布chrome插件竟然要5刀注册费和插件图标，懒得发布了。
+
+插件截图
+
+![extension](extension.png)
+
+
+主页截图
+
+![home](home.png)
