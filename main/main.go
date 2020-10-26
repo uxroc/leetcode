@@ -18,8 +18,8 @@ func main() {
 	r := gin.Default()
 	r.LoadHTMLFiles("home.html")
 
-	r.POST("/attempt", func(c *gin.Context) {
-		err := s.ServeAttempt(c.Request)
+	r.POST("/problem", func(c *gin.Context) {
+		err := s.CreateProblem(c.Request)
 		if err != nil {
 			c.Error(err)
 		} else {
@@ -27,17 +27,8 @@ func main() {
 		}
 	})
 
-	r.PUT("/hide", func(c *gin.Context) {
-		err := s.Hide(c.Request)
-		if err != nil {
-			c.Error(err)
-		} else {
-			c.JSON(http.StatusOK, gin.H{})
-		}
-	})
-
-	r.PUT("/tags", func(c *gin.Context){
-		err := s.UpdateTags(c.Request)
+	r.PUT("/problem", func(c *gin.Context){
+		err := s.UpdateProblem(c.Request)
 		if err != nil {
 			c.Error(err)
 		} else {
@@ -56,7 +47,7 @@ func main() {
 		})
 	})
 
-	r.GET("/data", func(c *gin.Context) {
+	r.GET("/problem", func(c *gin.Context) {
 		data, err := s.GetData()
 		if err != nil {
 			c.Error(err)

@@ -25,7 +25,7 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
                 element.preventDefault();
                 p.tags = document.getElementById("tags").value.split(",");
                 fetch(
-                    "http://localhost:8080/attempt", 
+                    "http://localhost:8080/problem", 
                     {
                         method: "post",
                         body:  JSON.stringify(p)

@@ -145,7 +145,7 @@ func (s *Service) parse(r *http.Request) (p Problem, err error) {
 	return
 }
 
-func (s *Service) ServeAttempt(r *http.Request) (err error) {
+func (s *Service) CreateProblem(r *http.Request) (err error) {
 	p, err := s.parse(r)
 	if err != nil {
 		return
@@ -182,12 +182,21 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 	return
 }
 
-func (s *Service) UpdateTags(r *http.Request) (err error) {
+func (s *Service) UpdateProblem(r *http.Request) (err error) {
 	p, err := s.parse(r)
 	if err != nil {
 		return
 	}
+	if len(p.Tags) > 0 {
+		err = s.updateTags(p)
+	} else {
+		err = s.hide(p)
+	}
 
+	return nil
+}
+
+func (s *Service) updateTags(p Problem) (err error) {
 	_, err = s.problems.UpdateOne(
 		context.TODO(),
 		bson.M{"id": p.Id},
@@ -200,12 +209,7 @@ func (s *Service) UpdateTags(r *http.Request) (err error) {
 	return
 }
 
-func (s *Service) Hide(r *http.Request) (err error) {
-	p, err := s.parse(r)
-	if err != nil {
-		return
-	}
-
+func (s *Service) hide(p Problem) (err error) {
 	_, err = s.problems.UpdateOne(
 		context.TODO(),
 		bson.M{"id": p.Id},

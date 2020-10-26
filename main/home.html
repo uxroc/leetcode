@@ -99,7 +99,7 @@
                         id: cell.getData().Id,
                         tags: cell.getData().Tags.split(",")
                     }
-                    fetch("tags", {
+                    fetch("problem", {
                         method: "put",
                         body:   JSON.stringify(p)
                     })
@@ -118,7 +118,7 @@
                     let p = {
                         id: cell.getData().Id
                     }
-                    fetch("hide", {
+                    fetch("problem", {
                         method: "put",
                         body:   JSON.stringify(p)
                     })
@@ -146,7 +146,7 @@
         return map;
     }
 
-    fetch("data")
+    fetch("problem")
         .then(response => response.text())
         .then(function(text){
             var dataMap = init(JSON.parse(text));
