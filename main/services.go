@@ -187,43 +187,16 @@ func (s *Service) UpdateProblem(r *http.Request) (err error) {
 	if err != nil {
 		return
 	}
-	if len(p.Tags) > 0 {
-		err = s.updateTags(p)
-	} else {
-		err = s.hide(p)
-	}
 
+	updates := p.Bson()
+	_, err = s.problems.UpdateOne(
+		context.TODO(),
+		bson.M{"id": p.Id},
+		updates,
+	)
+
+	err = s.notifyAll(p.Id)
 	return nil
-}
-
-func (s *Service) updateTags(p Problem) (err error) {
-	_, err = s.problems.UpdateOne(
-		context.TODO(),
-		bson.M{"id": p.Id},
-		bson.D{
-			{"$set", bson.D{{"tags", p.Tags}}},
-		},
-	)
-
-	err = s.notifyAll(p.Id)
-	return
-}
-
-func (s *Service) hide(p Problem) (err error) {
-	_, err = s.problems.UpdateOne(
-		context.TODO(),
-		bson.M{"id": p.Id},
-		bson.D{
-			{"$set", bson.D{{"hide", true}}},
-		},
-	)
-
-	if err != nil {
-		return
-	}
-
-	err = s.notifyAll(p.Id)
-	return
 }
 
 func (s *Service) notifyAll(id int) error{
@@ -237,6 +210,7 @@ func (s *Service) notifyAll(id int) error{
 		return err
 	}
 
+	data.LastAttempted = data.LastAttempted.Local()
 	s.broadcast <- &data
 	return nil
 }
