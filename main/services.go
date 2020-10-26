@@ -152,6 +152,7 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 		bson.D{
 			{"$inc", bson.D{{"attempts", 1}}},
 			{"$set", bson.D{{"lastattempted", time.Now()}}},
+			{"$push", bson.D{{"tags", bson.D{{"$each", p.Tags}}}}},
 		},
 	)
 

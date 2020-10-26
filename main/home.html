@@ -27,19 +27,40 @@
     <button id="print-table" class="btn btn-primary">Print Table</button>
 </div>
 <script>
+    function setRowColor(row) {
+        if(row.getData().Attempts >= 5) {
+            row.getElement().style.backgroundColor = "#F5A9A9";
+        } else if(row.getData().Attempts > 1 ){
+            row.getElement().style.backgroundColor = "#F2F5A9";
+        } else {
+            row.getElement().style.backgroundColor = "#FFFFFF";
+        }
+    }
+
+    function setRowAltColor(row) {
+        if(row.getData().Attempts >= 5) {
+            row.getElement().style.backgroundColor = "#ed7878";
+        } else if(row.getData().Attempts > 1 ){
+            row.getElement().style.backgroundColor = "#dee41b";
+        } else {
+            row.getElement().style.backgroundColor = "#d9d9d9";
+        }
+    }
+
     var table = new Tabulator("#table", {
         layout:"fitColumns",
         printAsHtml:true,
         pagination:"local",
+        history: true,
         paginationSize:10,
         rowFormatter:function(row){
-            if(row.getData().Attempts >= 5) {
-                row.getElement().style.backgroundColor = "#F5A9A9";
-            } else if(row.getData().Attempts > 1 ){
-                row.getElement().style.backgroundColor = "#F2F5A9";
-            } else {
-                row.getElement().style.backgroundColor = "#FFFFFF";
-            }
+            setRowColor(row);
+        },
+        rowMouseEnter:function(e, row){
+            setRowAltColor(row);
+        },
+        rowMouseLeave:function(e, row){
+            setRowColor(row);
         },
         initialSort:[
             {column:"Last Attempted", dir:"asc"}, //sort by this first

@@ -11,7 +11,7 @@ function info() {
         title:  res[1],
         uname:  arr[arr.length - 1],
         difficulty: diff,
-        url: url,
+        url: url,   
     }
 
     return JSON.stringify(p)
