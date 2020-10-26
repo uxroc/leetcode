@@ -27,6 +27,24 @@ func main() {
 		}
 	})
 
+	r.PUT("/hide", func(c *gin.Context) {
+		err := s.Hide(c.Request)
+		if err != nil {
+			c.Error(err)
+		} else {
+			c.JSON(http.StatusOK, gin.H{})
+		}
+	})
+
+	r.PUT("/tags", func(c *gin.Context){
+		err := s.UpdateTags(c.Request)
+		if err != nil {
+			c.Error(err)
+		} else {
+			c.JSON(http.StatusOK, gin.H{})
+		}
+	})
+
 	r.GET("/events", func(c *gin.Context) {
 		sse := NewSSEClient(s)
 		c.Stream(func(w io.Writer) bool {

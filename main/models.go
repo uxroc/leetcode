@@ -14,6 +14,7 @@ type Problem struct {
 	Attempts 		int 		`json:"Attempts"`
 	Tags 			[]string	`json:"Tags"`
 	Url				string		`json:"Url"`
+	Hide   			bool 		`json:"Hide"`
 }
 
 func (p Problem) String() (string, error) {

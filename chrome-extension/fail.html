@@ -10,13 +10,19 @@
         </style>
     </head>
     
-  <body align="center" style="background-color: #ffffb3;">
-    <div align="center">
-      <h2>Fail!</h2>
+    <body style="background-color: #ffffb3;">
+      <nav class="navbar navbar-dark bg-primary">
+        <span class="navbar-brand" style="color: white">
+          Something went wrong! :(
+        </span>
+        <form class="form-inline">
+          <button id="home" class="btn btn-outline-warning" type="button">Home</button>
+        </form>
+      </nav>
       <br>
-      <button id="home" class="btn btn-primary">Home</button>
-      <button id="close" class="btn btn-outline-dark">Close</button>
-    </div>
-    <script src="feedback.js"></script>
-  </body>
+      <div align="center">
+        <button id="close" class="btn btn-outline-dark">Close</button>
+      </div>
+      <script src="feedback.js"></script>
+    </body>
 </html>

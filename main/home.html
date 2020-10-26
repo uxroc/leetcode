@@ -63,7 +63,7 @@
             setRowColor(row);
         },
         initialSort:[
-            {column:"Last Attempted", dir:"asc"}, //sort by this first
+            {column:"LastAttempted", dir:"asc"},
         ],
         columns:[
             {title:"Id", field:"Id", width: 70},
@@ -94,8 +94,20 @@
                 title:"Tags",
                 field:"Tags",
                 editor:"input",
-                cellClick:function(e, cell){
-
+                cellEdited:function(cell){
+                    let p = {
+                        id: cell.getData().Id,
+                        tags: cell.getData().Tags.split(",")
+                    }
+                    fetch("tags", {
+                        method: "put",
+                        body:   JSON.stringify(p)
+                    })
+                    .then(response => {
+                        if(response.status !== 200) {
+                            alert("Failed:" + response.statusText)
+                        }
+                    }).catch(err => alert(err))
                 }
             },
             {
@@ -103,7 +115,19 @@
                 width:30,
                 hozAlign:"center",
                 cellClick:function(e, cell){
-
+                    let p = {
+                        id: cell.getData().Id
+                    }
+                    fetch("hide", {
+                        method: "put",
+                        body:   JSON.stringify(p)
+                    })
+                    .then(response => {
+                        if(response.status !== 200) {
+                            alert("Failed:" + response.statusText)
+                        }
+                    })
+                    .catch(err => alert(err))
                 }
             }
         ],
@@ -116,7 +140,9 @@
 
     function init(arr) {
         var map = new Map();
-        arr.forEach(row => map.set(row.Id, row));
+        arr.forEach(row => {
+            if (!row.Hide) map.set(row.Id, row);
+        });
         return map;
     }
 
@@ -124,14 +150,16 @@
         .then(response => response.text())
         .then(function(text){
             var dataMap = init(JSON.parse(text));
-            table.setData(text);
+            table.setData(JSON.stringify(Array.from(dataMap.values())));
             var source = new EventSource("events");
             source.onmessage = function(e) {
                 var row = JSON.parse(e.data);
-                dataMap.set(row.Id, row);
+                if(row.Hide) dataMap.delete(row.Id);
+                else dataMap.set(row.Id, row);
                 table.setData(JSON.stringify(Array.from(dataMap.values())));
             }
         })
+        .catch(err => alert(err))
 </script>
 </body>
 </html>

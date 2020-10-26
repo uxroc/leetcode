@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -58,10 +57,13 @@ func NewService() (s *Service, err error) {
 	mod := mongo.IndexModel{
 		Keys: bson.M{"id": 1},
 	}
-	s.problems.Indexes().CreateOne(
+	_, err = s.problems.Indexes().CreateOne(
 		context.TODO(),
 		mod,
 	)
+	if err != nil {
+		return
+	}
 
 	s.sse = make(map[*SSEClient]bool)
 	s.register = make(chan *SSEClient)
@@ -94,12 +96,8 @@ func connect() (client *mongo.Client, err error) {
 	return
 }
 
-func (s *Service) Close() {
-	s.client.Disconnect(context.TODO())
-}
-
-func date(time time.Time) string {
-	return fmt.Sprintf("%v %v, %v", time.Month().String()[:3], time.Day(), time.Year())
+func (s *Service) Close() error {
+	return s.client.Disconnect(context.TODO())
 }
 
 func (s *Service) GetData() (problems []Problem, err error) {
@@ -108,7 +106,7 @@ func (s *Service) GetData() (problems []Problem, err error) {
 	options := options.Find()
 	options.SetSort(bson.D{{ "lastattempted", 1 }})
 
-	cursor, err = s.problems.Find(context.TODO(), bson.D{{}}, options)
+	cursor, err = s.problems.Find(context.TODO(), bson.D{}, options)
 	if err != nil {
 		return
 	}
@@ -123,6 +121,8 @@ func (s *Service) GetData() (problems []Problem, err error) {
 		problems = append(problems, p)
 	}
 
+	log.Println(len(problems))
+
 	if err = cursor.Err(); err != nil {
 		return
 	}
@@ -130,27 +130,37 @@ func (s *Service) GetData() (problems []Problem, err error) {
 	return
 }
 
-func (s *Service) ServeAttempt(r *http.Request) (err error) {
+func (s *Service) parse(r *http.Request) (p Problem, err error) {
 	var b []byte
 	b, err = ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
 	}
 
-	var p Problem
 	err = json.Unmarshal(b, &p)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (s *Service) ServeAttempt(r *http.Request) (err error) {
+	p, err := s.parse(r)
 	if err != nil {
 		return
 	}
 
 	p.LastAttempted = time.Now()
 	p.Attempts = 1
+	p.Hide = false
 
 	result, err := s.problems.UpdateOne(
 		context.TODO(),
 		bson.M{"id": p.Id},
 		bson.D{
 			{"$inc", bson.D{{"attempts", 1}}},
+			{"$set", bson.D{{"hide", false}}},
 			{"$set", bson.D{{"lastattempted", time.Now()}}},
 			{"$push", bson.D{{"tags", bson.D{{"$each", p.Tags}}}}},
 		},
@@ -168,16 +178,63 @@ func (s *Service) ServeAttempt(r *http.Request) (err error) {
 		}
 	}
 
-	var data Problem
-	s.problems.FindOne(
+	err = s.notifyAll(p.Id)
+	return
+}
+
+func (s *Service) UpdateTags(r *http.Request) (err error) {
+	p, err := s.parse(r)
+	if err != nil {
+		return
+	}
+
+	_, err = s.problems.UpdateOne(
 		context.TODO(),
 		bson.M{"id": p.Id},
+		bson.D{
+			{"$set", bson.D{{"tags", p.Tags}}},
+		},
+	)
+
+	err = s.notifyAll(p.Id)
+	return
+}
+
+func (s *Service) Hide(r *http.Request) (err error) {
+	p, err := s.parse(r)
+	if err != nil {
+		return
+	}
+
+	_, err = s.problems.UpdateOne(
+		context.TODO(),
+		bson.M{"id": p.Id},
+		bson.D{
+			{"$set", bson.D{{"hide", true}}},
+		},
+	)
+
+	if err != nil {
+		return
+	}
+
+	err = s.notifyAll(p.Id)
+	return
+}
+
+func (s *Service) notifyAll(id int) error{
+	var data Problem
+	err := s.problems.FindOne(
+		context.TODO(),
+		bson.M{"id": id},
 	).Decode(&data)
 
-	data.LastAttempted = data.LastAttempted.Local()
-	s.broadcast <- &data
+	if err != nil {
+		return err
+	}
 
-	return
+	s.broadcast <- &data
+	return nil
 }
 
 func (s *Service) Broadcast(p *Problem) {

@@ -23,7 +23,7 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             document.getElementById("problem").innerHTML = p.id;
             done.onclick = function(element) {
                 element.preventDefault();
-                p.tags = document.getElementById("tags").value.split(";");
+                p.tags = document.getElementById("tags").value.split(",");
                 fetch(
                     "http://localhost:8080/attempt", 
                     {
