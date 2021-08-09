@@ -18,25 +18,25 @@ const (
 )
 
 type Service struct {
-	client 	 *mongo.Client
+	client   *mongo.Client
 	db       *mongo.Database
 	problems *mongo.Collection
 
-	sse	map[*SSEClient]bool
-	register chan *SSEClient
+	sse        map[*SSEClient]bool
+	register   chan *SSEClient
 	unregister chan *SSEClient
-	broadcast chan *Problem
+	broadcast  chan *Problem
 }
 
 type SSEClient struct {
 	problemChan chan *Problem
-	service *Service
+	service     *Service
 }
 
 func NewSSEClient(s *Service) (c *SSEClient) {
 	c = &SSEClient{
 		problemChan: make(chan *Problem, 150),
-		service:      s,
+		service:     s,
 	}
 
 	c.service.register <- c
@@ -104,7 +104,7 @@ func (s *Service) GetData() (problems []Problem, err error) {
 	var cursor *mongo.Cursor
 
 	options := options.Find()
-	options.SetSort(bson.D{{ "lastattempted", 1 }})
+	options.SetSort(bson.D{{"lastattempted", 1}})
 
 	cursor, err = s.problems.Find(context.TODO(), bson.D{}, options)
 	if err != nil {
@@ -130,14 +130,25 @@ func (s *Service) GetData() (problems []Problem, err error) {
 	return
 }
 
-func (s *Service) parse(r *http.Request) (p Problem, err error) {
+func (s *Service) parseAttempt(r *http.Request) (p Problem, solved bool, err error) {
 	var b []byte
 	b, err = ioutil.ReadAll(r.Body)
 	if err != nil {
 		return
 	}
 
-	err = json.Unmarshal(b, &p)
+	var objmap map[string]json.RawMessage
+	err = json.Unmarshal(b, &objmap)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(objmap["Solved"], &solved)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(objmap["Problem"], &p)
 	if err != nil {
 		return
 	}
@@ -146,13 +157,17 @@ func (s *Service) parse(r *http.Request) (p Problem, err error) {
 }
 
 func (s *Service) CreateProblem(r *http.Request) (err error) {
-	p, err := s.parse(r)
+	p, solved, err := s.parseAttempt(r)
 	if err != nil {
 		return
 	}
 
 	p.LastAttempted = time.Now()
 	p.Attempts = 1
+	p.Fails = 1
+	if solved {
+		p.Fails = 0
+	}
 	p.Hide = false
 
 	result, err := s.problems.UpdateOne(
@@ -160,6 +175,7 @@ func (s *Service) CreateProblem(r *http.Request) (err error) {
 		bson.M{"id": p.Id},
 		bson.D{
 			{"$inc", bson.D{{"attempts", 1}}},
+			{"$inc", bson.D{{"fails", p.Fails}}},
 			{"$set", bson.D{{"hide", false}}},
 			{"$set", bson.D{{"lastattempted", time.Now()}}},
 			{"$push", bson.D{{"tags", bson.D{{"$each", p.Tags}}}}},
@@ -182,8 +198,23 @@ func (s *Service) CreateProblem(r *http.Request) (err error) {
 	return
 }
 
-func (s *Service) UpdateProblem(r *http.Request) (err error) {
-	p, err := s.parse(r)
+func (s *Service) parseDelete(r *http.Request) (p Problem, err error) {
+	var b []byte
+	b, err = ioutil.ReadAll(r.Body)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &p)
+	if err != nil {
+		return
+	}
+
+	return
+}
+
+func (s *Service) DeleteProblem(r *http.Request) (err error) {
+	p, err := s.parseDelete(r)
 	if err != nil {
 		return
 	}
@@ -199,7 +230,7 @@ func (s *Service) UpdateProblem(r *http.Request) (err error) {
 	return nil
 }
 
-func (s *Service) notifyAll(id int) error{
+func (s *Service) notifyAll(id int) error {
 	var data Problem
 	err := s.problems.FindOne(
 		context.TODO(),

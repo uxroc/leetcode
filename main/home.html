@@ -18,7 +18,7 @@
 <body>
 <div id="table"></div>
 <div aligh="right" style="color:white;background-color: #2E2E2E">
-        Attempts:
+        Fails:
         <span style="color:#F5A9A9"> >=8, </span>
         <span style="color:#F2F5A9"> >=3</span>
 </div>
@@ -28,9 +28,9 @@
 </div>
 <script>
     function setRowColor(row) {
-        if(row.getData().Attempts >= 8) {
+        if(row.getData().Fails >= 8) {
             row.getElement().style.backgroundColor = "#F5A9A9";
-        } else if(row.getData().Attempts >= 3 ){
+        } else if(row.getData().Fails >= 3 ){
             row.getElement().style.backgroundColor = "#F2F5A9";
         } else {
             row.getElement().style.backgroundColor = "#FFFFFF";
@@ -38,9 +38,9 @@
     }
 
     function setRowAltColor(row) {
-        if(row.getData().Attempts >= 8) {
+        if(row.getData().Fails >= 8) {
             row.getElement().style.backgroundColor = "#ed7878";
-        } else if(row.getData().Attempts >= 3){
+        } else if(row.getData().Fails >= 3){
             row.getElement().style.backgroundColor = "#dee41b";
         } else {
             row.getElement().style.backgroundColor = "#d9d9d9";
@@ -90,6 +90,7 @@
                 }
             },
             {title:"Attempts", field:"Attempts", width: 130},
+            {title:"Fails", field:"Fails", width: 130},
             {
                 title:"Tags",
                 field:"Tags",

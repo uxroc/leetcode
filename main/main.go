@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -27,8 +28,8 @@ func main() {
 		}
 	})
 
-	r.PUT("/problem", func(c *gin.Context){
-		err := s.UpdateProblem(c.Request)
+	r.PUT("/problem", func(c *gin.Context) {
+		err := s.DeleteProblem(c.Request)
 		if err != nil {
 			c.Error(err)
 		} else {

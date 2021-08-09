@@ -24,11 +24,16 @@ chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
             done.onclick = function(element) {
                 element.preventDefault();
                 p.tags = document.getElementById("tags").value.split(",");
+                var solved = document.getElementById("solved").checked;
+                body = {
+                  "Solved": solved,
+                  "Problem": p
+                };
                 fetch(
-                    "http://localhost:8080/problem", 
+                    "http://localhost:8080/problem",
                     {
                         method: "post",
-                        body:  JSON.stringify(p)
+                        body:  JSON.stringify(body)
                     }
                 )
                 .then(

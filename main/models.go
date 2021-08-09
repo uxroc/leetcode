@@ -2,20 +2,22 @@ package main
 
 import (
 	"encoding/json"
-	"go.mongodb.org/mongo-driver/bson"
 	"time"
+
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type Problem struct {
-	Id 				int 		`json:"Id"`
-	Title 			string 		`json:"Title"`
-	Uname			string		`json:"Uname"`
-	Difficulty 		string 		`json:"Difficulty"`
-	LastAttempted  	time.Time 	`json:"LastAttempted"`
-	Attempts 		int 		`json:"Attempts"`
-	Tags 			[]string	`json:"Tags"`
-	Url				string		`json:"Url"`
-	Hide   			bool 		`json:"Hide"`
+	Id            int       `json:"Id"`
+	Title         string    `json:"Title"`
+	Uname         string    `json:"Uname"`
+	Difficulty    string    `json:"Difficulty"`
+	LastAttempted time.Time `json:"LastAttempted"`
+	Attempts      int       `json:"Attempts"`
+	Fails         int       `json:"Fails"`
+	Tags          []string  `json:"Tags"`
+	Url           string    `json:"Url"`
+	Hide          bool      `json:"Hide"`
 }
 
 func (p Problem) Bson() bson.D {
@@ -36,5 +38,3 @@ func (p Problem) String() (string, error) {
 	}
 	return string(str), nil
 }
-
-
