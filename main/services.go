@@ -121,7 +121,7 @@ func (s *Service) GetData() (problems []Problem, err error) {
 		problems = append(problems, p)
 	}
 
-	log.Println(len(problems))
+	//log.Println(len(problems))
 
 	if err = cursor.Err(); err != nil {
 		return
